@@ -206,6 +206,9 @@ public class EnemyFSM : MonoBehaviour
 
         hp -= _damaged;
 
+        nav.isStopped = true;
+        nav.ResetPath();
+
         if (hp > 0)
         {
             anim.SetTrigger("Damaged");
