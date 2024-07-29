@@ -11,11 +11,14 @@ public class PlayerFIre : MonoBehaviour
     public GameObject bulletEffect;     // 총알 효과
     ParticleSystem ps;              // 총기 발사 파티클
 
+    Animator anim;
+
     public float throwPower = 15f;
     public int weaponPower = 5;
     // Start is called before the first frame update
     void Start()
     {
+        anim = GetComponentInChildren<Animator>();
         ps = bulletEffect.GetComponent<ParticleSystem>();
     }
 
@@ -58,6 +61,10 @@ public class PlayerFIre : MonoBehaviour
                     bulletEffect.transform.forward = hitInfo.normal;
                 }
                 ps.Play();
+            }
+            if (anim.GetFloat("MoveMotion") == 0)
+            {
+                anim.SetTrigger("Shoot");
             }
         }
     }

@@ -9,6 +9,7 @@ public class PlayerMove : MonoBehaviour
     [SerializeField] Transform arm;
     [SerializeField] Transform character;
 
+    Animator anim;
     CharacterController mychar;
 
     public int hp;
@@ -26,6 +27,7 @@ public class PlayerMove : MonoBehaviour
     void Start()
     {
         hp = maxHp;
+        anim = GetComponentInChildren<Animator>();
         mychar = GetComponent<CharacterController>();
     }
 
@@ -47,13 +49,14 @@ public class PlayerMove : MonoBehaviour
         yVelocity += gravity * Time.deltaTime;
         dir = Camera.main.transform.TransformDirection(dir);
         dir.y = yVelocity;
-        
-        
+
+
         //Vector3 _moveDir = (_moveFoward * _moveAxis.y) + (_moveRIght * _moveAxis.x);
 
         //character.forward = _moveFoward;
 
         //transform.position += dir * moveSpeed * Time.deltaTime;
+        anim.SetFloat("MoveMotion",_moveAxis.magnitude);
         mychar.Move(dir * moveSpeed * Time.deltaTime);
     }
     void ActiveJump()
@@ -92,7 +95,6 @@ public class PlayerMove : MonoBehaviour
             StartCoroutine(PlayHitEffect());
         }
         Debug.Log("데미지 입음");
-        Debug.Log(hp);
     }
     IEnumerator PlayHitEffect()
     {

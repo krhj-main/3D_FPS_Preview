@@ -30,10 +30,11 @@ public class EnemyFSM : MonoBehaviour
     // 공격 관련
     float currentTime = 0;
     float attackDelay = 2f;
-    [SerializeField]int attackDamage = 1;
+    [SerializeField]public int attackDamage = 1;
 
     // 재귀 관련
     Vector3 oriPos;
+    Quaternion oriRot;
     public float limitDistance = 20f;
 
 
@@ -50,12 +51,13 @@ public class EnemyFSM : MonoBehaviour
     void Start()
     {
         enemyState = EnemyState.Idle;
-        //anim = GetComponent<Animator>();
+        anim = GetComponentInChildren<Animator>();
 
         cc = GetComponent<CharacterController>();
         player = GameObject.FindGameObjectWithTag("Player").transform;
 
         oriPos = transform.position;
+        oriRot = transform.rotation;
 
         hp = maxHp;
     }
@@ -65,6 +67,7 @@ public class EnemyFSM : MonoBehaviour
     {
         hpSlider.value = (float)hp / (float)maxHp;
         dist = Vector3.Distance(transform.position, player.position);
+        if (GameManager.gm.gState != GameManager.GameState.Run) return;
         switch (enemyState)
         {
             case EnemyState.Idle:
@@ -93,31 +96,30 @@ public class EnemyFSM : MonoBehaviour
 
     void Idle()
     {
-        waitCount += Time.deltaTime;
-        if (waitCount > 1.5f)
+        if (findDistance > dist)
         {
-            if (findDistance < dist)
-            {
-                enemyState = EnemyState.Move;
-            }
-            waitCount = 0;
+            anim.SetTrigger("IdleToMove");
+            enemyState = EnemyState.Move;
         }
     }
     void Move()
     {
         Vector3 _dir = (player.position - transform.position).normalized;
-        
+        float _dist = Vector3.Distance(oriPos, transform.position);
+
         if (dist > attackDistance)
         {
-            cc.Move(moveSpeed * _dir * Time.deltaTime);
+            cc.SimpleMove(moveSpeed * _dir);
+            transform.forward = _dir;
         }
         else
         {
             enemyState = EnemyState.Attack;
             currentTime = attackDelay;
+            anim.SetTrigger("MoveToAttackDelay");
         }
 
-        float _dist = Vector3.Distance(oriPos, transform.position);
+        
 
         if (_dist > limitDistance)
         {
@@ -134,7 +136,9 @@ public class EnemyFSM : MonoBehaviour
             {
                 currentTime = 0;
                 // 플레이어 공격함수 호출
-                player.GetComponent<PlayerMove>().Damaged(attackDamage);
+                // HitEvent 스크립트에서 호출
+                //player.GetComponent<PlayerMove>().Damaged(attackDamage);
+                anim.SetTrigger("StartAttack");
             }
         }
         else
@@ -142,21 +146,30 @@ public class EnemyFSM : MonoBehaviour
             // 아니라면 다시 추적
             enemyState = EnemyState.Move;
             currentTime = 0;
+            anim.SetTrigger("AttackToMove");
         }
     }
+    public void AttackAction()
+    {
+        player.GetComponent<PlayerMove>().Damaged(attackDamage);
+    }
+
     void Return()
     {
         float _dist = Vector3.Distance(oriPos, transform.position);
         if (_dist > 0.2f)
         {
             Vector3 _dir = (oriPos - transform.position).normalized;
-            cc.Move(_dir* moveSpeed * Time.deltaTime);
+            cc.SimpleMove(_dir* moveSpeed);
+            transform.forward = _dir;
         }
         else
         {
-            enemyState = EnemyState.Idle;
             transform.position = oriPos;
+            transform.rotation = oriRot;
+            anim.SetTrigger("MoveToIdle");
             hp = maxHp;
+            enemyState = EnemyState.Idle;
         }
     }
     void Hitted()
@@ -167,7 +180,7 @@ public class EnemyFSM : MonoBehaviour
     {
         //anim.SetBool("Hitted",true);
         // 잠시 무적
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(1f);
         //anim.SetBool("Hitted",false);
         // 무적 상태 해제
         enemyState = EnemyState.Move;
@@ -182,11 +195,13 @@ public class EnemyFSM : MonoBehaviour
 
         if (hp > 0)
         {
+            anim.SetTrigger("Damaged");
             enemyState = EnemyState.Hitted;
             Hitted();
         }
         else
         {
+            anim.SetTrigger("Death");
             enemyState = EnemyState.Death;
             Death();
         }
