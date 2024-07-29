@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.AI;
 
 
 public enum EnemyState
@@ -18,9 +19,9 @@ public class EnemyFSM : MonoBehaviour
     EnemyState enemyState;
 
     // 유저를 탐색할 최대거리
-    public float findDistance = 8f;
+    public float findDistance = 20f;
     // 이동속도
-    public float moveSpeed = 5f;
+    public float moveSpeed = 7f;
     // 공격가능 거리
     public float attackDistance = 2f;
     CharacterController cc;
@@ -35,7 +36,7 @@ public class EnemyFSM : MonoBehaviour
     // 재귀 관련
     Vector3 oriPos;
     Quaternion oriRot;
-    public float limitDistance = 20f;
+    public float limitDistance = 1000000f;
 
 
     // 체력관련
@@ -44,12 +45,14 @@ public class EnemyFSM : MonoBehaviour
     public Slider hpSlider;
 
 
+    NavMeshAgent nav;
     Animator anim;
     float waitCount = 0;
     float dist;
     // Start is called before the first frame update
     void Start()
     {
+        nav = GetComponent<NavMeshAgent>();
         enemyState = EnemyState.Idle;
         anim = GetComponentInChildren<Animator>();
 
@@ -104,12 +107,18 @@ public class EnemyFSM : MonoBehaviour
     }
     void Move()
     {
+        
         Vector3 _dir = (player.position - transform.position).normalized;
         float _dist = Vector3.Distance(oriPos, transform.position);
 
         if (dist > attackDistance)
         {
-            cc.SimpleMove(moveSpeed * _dir);
+            nav.isStopped = true;
+            nav.ResetPath();
+
+            nav.stoppingDistance = attackDistance;
+            //cc.SimpleMove(moveSpeed * _dir);
+            nav.destination = player.position;
             transform.forward = _dir;
         }
         else
@@ -160,11 +169,15 @@ public class EnemyFSM : MonoBehaviour
         if (_dist > 0.2f)
         {
             Vector3 _dir = (oriPos - transform.position).normalized;
-            cc.SimpleMove(_dir* moveSpeed);
+            nav.SetDestination(oriPos);
+            nav.stoppingDistance = 0;
+            //cc.SimpleMove(_dir* moveSpeed);
             transform.forward = _dir;
         }
         else
         {
+            nav.ResetPath();
+            nav.isStopped = true;
             transform.position = oriPos;
             transform.rotation = oriRot;
             anim.SetTrigger("MoveToIdle");
