@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 
 public class PlayerFIre : MonoBehaviour
 {
@@ -15,9 +17,36 @@ public class PlayerFIre : MonoBehaviour
 
     public float throwPower = 15f;
     public int weaponPower = 5;
+    public TextMeshProUGUI textWeaponMode;
+    public Transform muzzle;
+    public GameObject[] muzzleEffect;
+
+    public GameObject weapon1, hud1;
+    public GameObject weapon2, hud2;
+
+
+
+    //무기 모드에 관한 열거형변수
+    enum WeaponMode
+    {
+        Normal,
+        Sniper,
+    }
+    WeaponMode wMode;
+
+    // 줌 효과 확인변수
+    bool zoomMode = false;
+    public GameObject zoomView;
     // Start is called before the first frame update
     void Start()
     {
+        zoomView.SetActive(false);
+        weapon1.SetActive(true);
+        hud1.SetActive(true);
+        weapon2.SetActive(false);
+        hud2.SetActive(false);
+        textWeaponMode.text = "Normal";
+        wMode = WeaponMode.Normal;
         anim = GetComponentInChildren<Animator>();
         ps = bulletEffect.GetComponent<ParticleSystem>();
     }
@@ -26,15 +55,61 @@ public class PlayerFIre : MonoBehaviour
     void Update()
     {
         if (GameManager.gm.gState != GameManager.GameState.Run) return;
+
+
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            zoomView.SetActive(false);
+            weapon1.SetActive(true);
+            hud1.SetActive(true);
+            weapon2.SetActive(false);
+            hud2.SetActive(false);
+            textWeaponMode.text = "Normal";
+            wMode = WeaponMode.Normal;
+            Camera.main.fieldOfView = 60f;
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            zoomView.SetActive(false);
+            weapon1.SetActive(false);
+            hud1.SetActive(false);
+            weapon2.SetActive(true);
+            hud2.SetActive(true);
+            textWeaponMode.text = "Sniper";
+            wMode = WeaponMode.Sniper;
+        }
         if (Input.GetMouseButtonDown(1))
         {
-            GameObject _bomb = Instantiate(bombFactory);
+            switch (wMode)
+            {
+                case WeaponMode.Normal:
+                    
 
-            _bomb.transform.position = firePosition.transform.position;
+                    GameObject _bomb = Instantiate(bombFactory);
 
-            Rigidbody rb = _bomb.GetComponent<Rigidbody>();
+                    _bomb.transform.position = firePosition.transform.position;
 
-            rb.AddForce(Camera.main.transform.forward * throwPower, ForceMode.Impulse);
+                    Rigidbody rb = _bomb.GetComponent<Rigidbody>();
+
+                    rb.AddForce(Camera.main.transform.forward * throwPower, ForceMode.Impulse);
+
+                    break;
+
+                case WeaponMode.Sniper:
+                    if (!zoomMode)
+                    {
+                        zoomView.SetActive(true);
+                        Camera.main.fieldOfView = 15f;
+                        zoomMode = true;
+                    }
+                    else
+                    {
+                        zoomView.SetActive(false);
+                        Camera.main.fieldOfView = 60f;
+                        zoomMode = false;
+                    }
+                    break;
+            }
         }
 
         if (Input.GetMouseButton(0))
@@ -64,8 +139,17 @@ public class PlayerFIre : MonoBehaviour
             }
             if (anim.GetFloat("MoveMotion") == 0)
             {
+                StartCoroutine(ShootEffectOn(0.05f));
                 anim.SetTrigger("Shoot");
             }
         }
+    }
+    IEnumerator ShootEffectOn(float _delay)
+    {
+        int _muzzleIdx = Random.Range(0,muzzleEffect.Length);
+
+        muzzleEffect[_muzzleIdx].SetActive(true);
+        yield return new WaitForSeconds(_delay);
+        muzzleEffect[_muzzleIdx].SetActive(false);
     }
 }

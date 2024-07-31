@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -19,8 +20,10 @@ public class GameManager : MonoBehaviour
     {
         Ready,
         Run,
+        Pause,
         GameOver,
     }
+    public GameObject gameOption;
 
     private void Awake()
     {
@@ -28,6 +31,19 @@ public class GameManager : MonoBehaviour
         {
             gm = this;
         }
+    }
+    public void OpenOptionWindow()
+    {
+        gameOption.SetActive(true);
+        Time.timeScale = 0;
+        gState = GameState.Pause;
+    }
+    public void CloseOptionWindow()
+    {
+        gameOption.SetActive(false);
+
+        Time.timeScale = 1f;
+        gState = GameState.Run;
     }
     // Start is called before the first frame update
     void Start()
@@ -52,6 +68,10 @@ public class GameManager : MonoBehaviour
             gameLabel.SetActive(true);
             gameText.text = "GameOver";
             gameText.color = new Color32(255,0,0,255);
+
+            Transform buttons = gameText.transform.GetChild(0);
+            buttons.gameObject.SetActive(true);
+
             player.GetComponentInChildren<Animator>().SetFloat("MoveMotion",0);
 
             gState = GameState.GameOver;
@@ -76,5 +96,16 @@ public class GameManager : MonoBehaviour
         gameLabel.SetActive(false);
 
         gState = GameState.Run;
+    }
+    public void RestartGame()
+    {
+        Time.timeScale = 1f;
+
+        //SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        SceneManager.LoadScene(1);
+    }
+    public void QuitGame()
+    {
+        Application.Quit();
     }
 }

@@ -15,6 +15,9 @@ public class BombAction : MonoBehaviour
 
     public GameObject bombEffect;
 
+    public int attackPower = 10;
+    public float explosionRadius = 20f;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -29,6 +32,13 @@ public class BombAction : MonoBehaviour
     
     private void OnCollisionEnter(Collision _col)
     {
+        Collider[] _cols = Physics.OverlapSphere(transform.position, explosionRadius, LayerMask.NameToLayer("Enemy"));
+        Debug.Log(_cols);
+
+        for (int i = 0; i < _cols.Length; i++)
+        {
+            _cols[i].GetComponent<EnemyFSM>().Damaged(attackPower);
+        }
         GameObject eff = Instantiate(bombEffect);
 
         eff.transform.position = transform.position;
